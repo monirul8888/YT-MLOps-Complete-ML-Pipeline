@@ -42,6 +42,21 @@ def load_data(data_url : str) -> pd.DataFrame:
         raise
 
 
+def preProcess_data(df : pd.DataFrame) -> pd.DataFrame:
+
+    try:
+        df.drop(columns=["Unnamed: 2", "Unnamed: 3", "Unnamed: 4"], inplace=True)
+        df.rename(columns={"v1": "target","v2" : "text"}, inplace=True)
+        logger.debug("Data PreProcessed Completed")
+        return df
+    
+    except pd.errors.ParserError as e:
+        logger.error("Failed to PreProcess Data %s", e)
+    except Exception as e:
+        logger.error("Unexpected Error While PreProcess Data : %s ", e)
+        raise
+
+
 
 
 def main():
@@ -49,6 +64,9 @@ def main():
         data_path = 'https://raw.githubusercontent.com/vikashishere/Datasets/main/spam.csv'
         df = load_data(data_url=data_path)
         print(df.head())
+
+        df = preProcess_data(df)
+        print(df)
       
     except Exception as e:
         logger.error('Failed to complete the data ingestion process: %s', e)
