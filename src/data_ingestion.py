@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
-
 import logging
 
 log_dir = "logs"
@@ -58,15 +57,26 @@ def preProcess_data(df : pd.DataFrame) -> pd.DataFrame:
 
 
 
+def save_data(train_data : pd.DataFrame, test_data : pd.DataFrame, data_path: str):
+    try:
+        raw_data_path = os.path.join(data_path, "raw")
+        os.makedirs(raw_data_path, exist_ok=True)
+        train_data.to_csv(os.path.join(raw_data_path, "train.csv"), index=False)
+        test_data.to_csv(os.path.join(raw_data_path, "test.csv"), index=False)
+        logger.debug("Data Saved Successfully")
+    
+    except Exception as e:
+        logger.error("Unexpected Error While Save Data : %s ", e)
+        raise
+
 
 def main():
     try:
         data_path = 'https://raw.githubusercontent.com/vikashishere/Datasets/main/spam.csv'
         df = load_data(data_url=data_path)
-        print(df.head())
-
         df = preProcess_data(df)
-        print(df)
+        train_data, test_data = train_test_split(df, test_size=0.2, random_state=42)
+        save_data(train_data, test_data, data_path = "./data")
       
     except Exception as e:
         logger.error('Failed to complete the data ingestion process: %s', e)
