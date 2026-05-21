@@ -1,80 +1,128 @@
 import os
 import logging
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
-import string
 import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
+import string
+from sklearn.preprocessing import LabelEncoder
+import pandas as pd
 
-# Ensure the "logs" directory exists
-log_dir = 'logs'
+
+log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
 
-# Setting up logger
-logger = logging.getLogger('data_preprocessing')
-logger.setLevel('DEBUG')
+logger = logging.getLogger("data_preprocessing")
+logger.setLevel("DEBUG")
 
 console_handler = logging.StreamHandler()
-console_handler.setLevel('DEBUG')
+console_handler.setLevel("DEBUG")
 
-log_file_path = os.path.join(log_dir, 'data_preprocessing.log')
-file_handler = logging.FileHandler(log_file_path)
-file_handler.setLevel('DEBUG')
+file_handler_path = os.path.join(log_dir, "data_preprocessing.log")
+file_handler = logging.FileHandler(file_handler_path)
+file_handler.setLevel("DEBUG")
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
+formatter = logging.Formatter(" %(asctime)s --- %(name)s --- %(levelname)s --- %(message)s" )
 file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
 
-logger.addHandler(console_handler)
 logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
 
 def transform_text(text):
+
     """
-    Transforms the input text by converting it to lowercase, tokenizing, removing stopwords and punctuation, and stemming.
+    This function cleans and transforms text.
+
+    Steps:
+    1. Converts text to lowercase
+    2. Splits text into words
+    3. Removes punctuation and stopwords
+    4. Converts words into root form using stemming
+    5. Returns the cleaned text
+
     """
+
+    # Create stemmer object
     ps = PorterStemmer()
-    # Convert to lowercase
+
+    # Convert text to lowercase
     text = text.lower()
-    # Tokenize the text
-    text = nltk.word_tokenize(text)
-    # Remove non-alphanumeric tokens
-    text = [word for word in text if word.isalnum()]
-    # Remove stopwords and punctuation
-    text = [word for word in text if word not in stopwords.words('english') and word not in string.punctuation]
+
+    # Split text into words
+    words = nltk.word_tokenize(text)
+
+    # Empty list to store cleaned words
+    clean_words = []
+
+    # Remove punctuation and stopwords
+    for word in words:
+
+        # Keep only letters and numbers
+        if word.isalnum():
+
+            # Remove common words like "the", "is", "and"
+            if word not in stopwords.words('english'):
+
+                clean_words.append(word)
+
     # Stem the words
-    text = [ps.stem(word) for word in text]
-    # Join the tokens back into a single string
-    return " ".join(text)
+    stemmed_words = []
+
+    for word in clean_words:
+        stemmed_words.append(ps.stem(word))
+
+    # Join words into one sentence
+    return " ".join(stemmed_words)
+
+
+ 
+
+
+
 
 def preprocess_df(df, text_column='text', target_column='target'):
     """
-    Preprocesses the DataFrame by encoding the target column, removing duplicates, and transforming the text column.
+    This function preprocesses the DataFrame.
+
+    Steps:
+    1. Encode target column into numbers
+    2. Remove duplicate rows
+    3. Clean text data
+    4. Return processed DataFrame
     """
+
     try:
-        logger.debug('Starting preprocessing for DataFrame')
-        # Encode the target column
+        logger.info("Starting data preprocessing")
+
+        # convert target labels into numbers
         encoder = LabelEncoder()
         df[target_column] = encoder.fit_transform(df[target_column])
-        logger.debug('Target column encoded')
 
-        # Remove duplicate rows
+        logger.info("Target column encoded")
+
+        # remove duplicate rows
         df = df.drop_duplicates(keep='first')
-        logger.debug('Duplicates removed')
-        
-        # Apply text transformation to the specified text column
-        df.loc[:, text_column] = df[text_column].apply(transform_text)
-        logger.debug('Text column transformed')
+
+        logger.info("Duplicate rows removed")
+
+        # clean text column
+        df[text_column] = df[text_column].apply(transform_text)
+
+        logger.info("Text column transformed")
+
+        # return cleaned dataframe
         return df
-    
+
     except KeyError as e:
-        logger.error('Column not found: %s', e)
+        logger.error(f"Column not found: {e}")
         raise
+
     except Exception as e:
-        logger.error('Error during text normalization: %s', e)
+        logger.error(f"Error during preprocessing: {e}")
         raise
+
+
 
 def main(text_column='text', target_column='target'):
     """

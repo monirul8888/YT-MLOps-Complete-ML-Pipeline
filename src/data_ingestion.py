@@ -75,7 +75,7 @@ def main():
         data_path = 'https://raw.githubusercontent.com/vikashishere/Datasets/main/spam.csv'
         df = load_data(data_url=data_path)
         df = preProcess_data(df)
-        train_data, test_data = train_test_split(df, test_size=0.2, random_state=42)
+        train_data, test_data = train_test_split(df, test_size=0.20, random_state=42)
         save_data(train_data, test_data, data_path = "./data")
       
     except Exception as e:
